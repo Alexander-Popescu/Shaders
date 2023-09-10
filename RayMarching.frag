@@ -171,3 +171,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //set color
     fragColor = vec4(color, 1.0);
 }
+
+//shadertoy URL:
+//https://www.shadertoy.com/view/ctBfzd
