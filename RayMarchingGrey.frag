@@ -34,25 +34,18 @@ float scene(vec3 pos)
     //returns the distance to the closest object
 
     float distance = 1000.0;
-    float smoothness = 1.0;
-
-    //spheres
-    vec3 spherePos = vec3(0.0, cos(iTime), 5.0);
-    float sphereRadius = 1.0;
-    float sphereDist = sdfSphere(pos, spherePos, sphereRadius);
-
-    distance = sphereDist;
+    float smoothness = abs(sin(iTime));
 
     //plane
     vec3 planePos = vec3(0.0, -1.0, 0.0);
     vec3 planeNormal = vec3(0.0, 1.0, 0.0);
     float planeDist = sdfPlane(pos, planePos, planeNormal);
 
-    distance = smoothMin(planeDist, sphereDist, smoothness);
+    distance = planeDist;
 
     //torus
-    vec3 torusPos = vec3(0.0, -1.0, 5.0);
-    vec2 torusSize = vec2(2.0, 0.3);
+    vec3 torusPos = vec3(0.0, cos(iTime) * 1.1 - 1.2, 6.0);
+    vec2 torusSize = vec2(2.0, 0.5);
     float torusDist = sdfTorus(pos - torusPos, torusSize);
    
     distance = smoothMin(torusDist, distance, smoothness);
@@ -155,7 +148,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     vec3 color = vec3(1.0);
 
-    vec2 uv = (fragCoord - 0.5 * iResolution.xy)/iResolution.y;
+    vec2 uv = (fragCoord-0.5*iResolution.xy)/iResolution.y;
 
     //camera system
 
@@ -171,6 +164,3 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //set color
     fragColor = vec4(color, 1.0);
 }
-
-//shadertoy URL:
-//https://www.shadertoy.com/view/ctBfzd
