@@ -27,6 +27,12 @@ float SDFrectangularprism(vec3 p, vec3 prismPos, vec3 prismSize)
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
+float SDFtorus(vec3 p, vec3 torusPos, float torusRadius, float torusThickness)
+{
+    vec2 q = vec2(length(p.xz - torusPos.xz) - torusRadius, p.y - torusPos.y);
+    return length(q) - torusThickness;
+}
+
 float lerp(float a, float b, float t)
 {
     return a + t * (b - a);
@@ -91,7 +97,7 @@ sceneReturn scene(vec3 p)
     float smoothness = 1.0;
 
     //sphere in center
-    vec3 spherePos = vec3(0.0, sin(iTime) * 2.0 - 1.0, 0.0);
+    vec3 spherePos = vec3(0.0, sin(iTime) * 1.2 + 2.0, 0.0);
     float sphereRadius = 1.0;
     vec3 sphereId = vec3(1.0,0.0,0.0);
     float sphereDist = SDFsphere(p, spherePos, sphereRadius);
@@ -99,13 +105,28 @@ sceneReturn scene(vec3 p)
    //plane under it
     vec3 planePos = vec3(0.0, -1.0, 0.0);
     vec3 planeNormal = vec3(0.0, 1.0, 0.0);
-    vec3 planeId = vec3(1.0,1.0,1.0);
+    vec3 planeId = vec3(-1.0,-1.0,-1.0);
     float planeDist = SDFplane(p, planePos, planeNormal);
     
-    //return union
+    //cube next to it
+    vec3 prismPos = vec3(cos(iTime) * 2.0 + 1.0, 1.0, 0.0);
+    vec3 prismSize = vec3(0.8, 0.8, 0.8);
+    vec3 prismId = vec3(0.0,0.0,1.0);
+    float prismDist = SDFrectangularprism(p, prismPos, prismSize);
 
-    //smooth union
-    return combine(sphereDist, planeDist, sphereId, planeId, 1, smoothness);
+    //torus next to it
+    vec3 torusPos = vec3(-sin(iTime) * 2.0 - 1.0, 1.0, 0.0);
+    float torusRadius = 1.0;
+    float torusThickness = 0.3;
+    vec3 torusId = vec3(0.0,1.0,0.0);
+    float torusDist = SDFtorus(p, torusPos, torusRadius, torusThickness);
+
+    //smoothmix the shapes and union the plane
+    sceneReturn result = combine(sphereDist, prismDist, sphereId, prismId, 1, smoothness);
+    result = combine(result.x, torusDist, result.y, torusId, 1, smoothness);
+    result = combine(result.x, planeDist, result.y, planeId, 0, smoothness);
+
+    return result;
 
 }
 
@@ -226,10 +247,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 color = vec3(1.0);
 
     float orbitDistance = 5.0;
+    float orbitSpeed = 0.5;
 
     //calculate ray for the camera to this pixel
-    vec3 rayOrigin = vec3(sin(iTime) * orbitDistance, 1.0, cos(iTime) * orbitDistance);
-    vec3 lookAtPosition = vec3(0.0,0.0, 0.0);
+    vec3 rayOrigin = vec3(sin(iTime * orbitSpeed) * orbitDistance, 3.0, cos(iTime * orbitSpeed) * orbitDistance);
+    vec3 lookAtPosition = vec3(0.0,1.0, 0.0);
 
     vec3 rayDirection = camera(rayOrigin, lookAtPosition) * normalize(vec3(uv, FOV));
 
