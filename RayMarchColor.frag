@@ -27,41 +27,86 @@ float SDFrectangularprism(vec3 p, vec3 prismPos, vec3 prismSize)
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
+float lerp(float a, float b, float t)
+{
+    return a + t * (b - a);
+}
+
+vec3 vlerp(vec3 a, vec3 b, float t)
+{
+    return a + t * (b - a);
+}
+
+vec4 Blend( float a, float b, vec3 colorA, vec3 colorB, float k )
+{
+    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    float blendDistance = lerp( b, a, h ) - k*h*(1.0-h);
+    vec3 blendColor = vlerp(colorB,colorA,h);
+    return vec4(blendColor, blendDistance);
+}
+
+sceneReturn combine(float distanceA, float distanceB, vec3 colorA, vec3 colorB, int operation, float smoothness) {
+    float distance = distanceA;
+    vec3 color = colorA;
+
+    if (operation == 0) {
+        if (distanceB < distanceA) {
+            distance = distanceB;
+            color = colorB;
+        }
+    } 
+    // Blend
+    else if (operation == 1) {
+        vec4 blend = Blend(distanceA,distanceB,colorA,colorB, smoothness);
+        distance = blend.w;
+        color = blend.xyz;
+    }
+    // Cut
+    else if (operation == 2) {
+        // max(a,-b)
+        if (-distanceB > distance) {
+            distance = -distanceB;
+            color = colorB;
+        }
+    }
+    // Mask
+    else if (operation == 3) {
+        // max(a,b)
+        if (distanceB > distance) {
+            distance = distanceB;
+            color = colorB;
+        }
+    }
+
+    return sceneReturn(distance,color);
+}
+
+
+
 sceneReturn scene(vec3 p)
 {
     //returns vec2 where vec2.x is the distance and vec2.y is the object
-    
+    //you can have special materials with negative colors but they will not work with color interpolation, see getmaterial function to see what materials are available
+
+    float smoothness = 1.0;
+
     //sphere in center
-    vec3 spherePos = vec3(0.0, 0.0, 0.0);
+    vec3 spherePos = vec3(0.0, sin(iTime) * 2.0 - 1.0, 0.0);
     float sphereRadius = 1.0;
     vec3 sphereId = vec3(1.0,0.0,0.0);
     float sphereDist = SDFsphere(p, spherePos, sphereRadius);
 
    //plane under it
-    vec3 planePos = vec3(0.0, -10.0, 0.0);
+    vec3 planePos = vec3(0.0, -1.0, 0.0);
     vec3 planeNormal = vec3(0.0, 1.0, 0.0);
-    vec3 planeId = vec3(-1.0,-1.0,-1.0);
+    vec3 planeId = vec3(1.0,1.0,1.0);
     float planeDist = SDFplane(p, planePos, planeNormal);
-
-    //cube next to sphere
-    vec3 prismPos = vec3(-2.0, 0.0, 0.0);
-    vec3 prismSize = vec3(1.0, 2.0, 3.0);
-    vec3 prismId = vec3(0.0,0.0,0.0);
-    float prismDist = SDFrectangularprism(p, prismPos, prismSize);
     
     //return union
-    if (sphereDist < planeDist && sphereDist < prismDist)
-    {
-        return sceneReturn(sphereDist, sphereId);
-    }
-    else if (planeDist < prismDist)
-    {
-        return sceneReturn(planeDist, planeId);
-    }
-    else
-    {
-        return sceneReturn(prismDist, prismId);
-    }
+
+    //smooth union
+    return combine(sphereDist, planeDist, sphereId, planeId, 1, smoothness);
+
 }
 
 sceneReturn rayMarch(vec3 rayOrigin, vec3 rayDirection)
@@ -180,9 +225,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //color for this pixel
     vec3 color = vec3(1.0);
 
+    float orbitDistance = 5.0;
+
     //calculate ray for the camera to this pixel
-    vec3 rayOrigin = vec3(sin(iTime * 0.4) * 10.0, 1.0, cos(iTime * 0.15) * 10.0);
+    vec3 rayOrigin = vec3(sin(iTime) * orbitDistance, 1.0, cos(iTime) * orbitDistance);
     vec3 lookAtPosition = vec3(0.0,0.0, 0.0);
+
     vec3 rayDirection = camera(rayOrigin, lookAtPosition) * normalize(vec3(uv, FOV));
 
     color = render(uv, rayOrigin, rayDirection);
