@@ -52,6 +52,7 @@ vec4 Blend( float a, float b, vec3 colorA, vec3 colorB, float k )
 }
 
 sceneReturn combine(float distanceA, float distanceB, vec3 colorA, vec3 colorB, int operation, float smoothness) {
+    //https://github.com/SebLague/Ray-Marching/blob/master/Assets/Scripts/SDF/Raymarching.compute
     float distance = distanceA;
     vec3 color = colorA;
 
@@ -178,7 +179,7 @@ vec3 getMaterial(vec3 hitPos, vec3 id)
 
 vec3 light(vec3 hitPos, vec3 rayDirection, vec3 color)
 {
-    vec3 lightPos = vec3(20.0, 30.0, -30.0);
+    vec3 lightPos = vec3(20.0, 30.0, 30.0);
     vec3 light = normalize(lightPos - hitPos);
     vec3 normal = getNormal(hitPos);
     vec3 view = -rayDirection;
@@ -246,8 +247,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //color for this pixel
     vec3 color = vec3(1.0);
 
-    float orbitDistance = 5.0;
-    float orbitSpeed = 0.5;
+    float orbitDistance = 4.0;
+    float orbitSpeed = 0.0;
 
     //calculate ray for the camera to this pixel
     vec3 rayOrigin = vec3(sin(iTime * orbitSpeed) * orbitDistance, 3.0, cos(iTime * orbitSpeed) * orbitDistance);
