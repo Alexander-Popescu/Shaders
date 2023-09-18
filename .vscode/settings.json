@@ -1,0 +1,9 @@
+{
+    "editor.semanticHighlighting.enabled": false,
+    "editor.semanticTokenColorCustomizations": {
+      "enabled": true,
+      "[RayMarchColor.frag]": {
+        "enabled": false
+      }
+    }
+  }

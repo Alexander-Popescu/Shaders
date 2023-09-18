@@ -1,6 +1,6 @@
 precision mediump float;
 
-const float FOV = 1.0;
+const float FOV = 1.25;
 const int MAX_STEPS = 1000;
 const float MAX_DIST = 1000.0;
 const float HIT_THRESHOLD = 0.0001;
@@ -13,7 +13,7 @@ struct sceneReturn
 
 float SDFsphere(vec3 p, vec3 spherePos, float sphereRadius)
 {
-    return length(p - spherePos) - sphereRadius;
+    return length(p - spherePos) - sphereRadius + 0.3 * sin(iTime + p.x + p.y + p.z);
 }
 
 float SDFplane(vec3 p, vec3 planePos, vec3 planeNormal)
@@ -98,7 +98,7 @@ sceneReturn scene(vec3 p)
     float smoothness = 1.0;
 
     //sphere in center
-    vec3 spherePos = vec3(0.0, sin(iTime) * 1.2 + 2.0, 0.0);
+    vec3 spherePos = vec3(0.0, 1.0, 0.0);
     float sphereRadius = 1.0;
     vec3 sphereId = vec3(1.0,0.0,0.0);
     float sphereDist = SDFsphere(p, spherePos, sphereRadius);
@@ -106,17 +106,17 @@ sceneReturn scene(vec3 p)
    //plane under it
     vec3 planePos = vec3(0.0, -1.0, 0.0);
     vec3 planeNormal = vec3(0.0, 1.0, 0.0);
-    vec3 planeId = vec3(-1.0,-1.0,-1.0);
+    vec3 planeId = vec3(-1.0,-1.0,-1.0);//-1 plane id gives non standard material
     float planeDist = SDFplane(p, planePos, planeNormal);
     
     //cube next to it
-    vec3 prismPos = vec3(cos(iTime) * 2.0 + 1.0, 1.0, 0.0);
+    vec3 prismPos = vec3(cos(iTime * 1.0) * 3.0, 1.0, -cos(iTime * 0.5));
     vec3 prismSize = vec3(0.8, 0.8, 0.8);
     vec3 prismId = vec3(0.0,0.0,1.0);
     float prismDist = SDFrectangularprism(p, prismPos, prismSize);
 
     //torus next to it
-    vec3 torusPos = vec3(-sin(iTime) * 2.0 - 1.0, 1.0, 0.0);
+    vec3 torusPos = vec3(-cos(iTime * 0.25) * 4.0, 1.0, cos(iTime));
     float torusRadius = 1.0;
     float torusThickness = 0.3;
     vec3 torusId = vec3(0.0,1.0,0.0);
@@ -133,7 +133,7 @@ sceneReturn scene(vec3 p)
 
 sceneReturn rayMarch(vec3 rayOrigin, vec3 rayDirection)
 {
-    //returns vec2 where vec2.x is the distance and vec2.y is the object
+    //returns vec2 where vec2.x is the distance and vec2.y is the color
     sceneReturn result;
     for (int i = 0; i < MAX_STEPS; i++)
     {
@@ -194,7 +194,7 @@ vec3 light(vec3 hitPos, vec3 rayDirection, vec3 color)
 
     //shadows
     //value to fix noise on front of objects
-    float small_number = 0.01;
+    float small_number = 0.2;
     sceneReturn result = rayMarch(hitPos + normal * small_number, light);
     if (result.x < length(lightPos - hitPos))
     {
@@ -251,7 +251,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float orbitSpeed = 0.0;
 
     //calculate ray for the camera to this pixel
-    vec3 rayOrigin = vec3(sin(iTime * orbitSpeed) * orbitDistance, 3.0, cos(iTime * orbitSpeed) * orbitDistance);
+    vec3 rayOrigin = vec3(sin(iTime * orbitSpeed) * orbitDistance, 2.5, cos(iTime * orbitSpeed) * orbitDistance);
     vec3 lookAtPosition = vec3(0.0,1.0, 0.0);
 
     vec3 rayDirection = camera(rayOrigin, lookAtPosition) * normalize(vec3(uv, FOV));
@@ -261,7 +261,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //post processing
     
     //gamma correction
-    color = pow(color, vec3(0.4545));
+    color = pow(color, vec3(0.4545)); 
 
     //send it out
     fragColor = vec4(color, 1.0);
